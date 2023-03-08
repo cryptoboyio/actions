@@ -193,7 +193,7 @@ jobs:
 
   slack-release:
     if: (github.ref_name == 'master') && inputs.TRIGGER_SLACK_ALERT
-    uses: ./.github/workflows/slack-release-alert.yaml@docker-build-and-push-action
+    uses: ./.github/workflows/slack-release-alert.yaml
     with:
       APP_NAME: ${{ inputs.REPOSITORY }}
       IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
