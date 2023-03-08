@@ -1,5 +1,11 @@
 # Docker Build & Push Action
 
+- [Inputs](#inputs)
+- [Secrets](#secrets)
+- [Examples](#examples)
+  - [1. Minimum use case](#1-minimum-use-case)
+  - [2. Slack and release use case](#2-slack-and-release-use-case)
+
 ## Inputs
 
 | Name                  | Type    | Required | Default value       | Description                |
@@ -31,6 +37,8 @@ If `IMAGE_TAG` or `IMAGE_TAG_LATEST` contains a `/` character, then the default 
 
 ## Examples
 
+### 1. Minimum use case
+
 ```yaml
 name: Build docker image on PR
 
@@ -51,6 +59,8 @@ jobs:
       PUSH_IMAGE: false
     secrets: inherit
 ```
+
+### 2. Slack and release use case
 
 ```yaml
 name: Build and push docker image on PUSH
