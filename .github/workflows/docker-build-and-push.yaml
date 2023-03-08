@@ -11,9 +11,6 @@ on:
         type: string
         default: "${{ vars.DEFAULT_RUNNER }}"
       # Docker params ############################################
-      BUILD_ARGS:
-        type: string
-        default: ""
       CONTEXT:
         type: string
         default: "."
@@ -121,7 +118,6 @@ jobs:
         with:
           build-args: |
             GITHUB_TOKEN=${{ secrets.ACCESS_REPOS_TOKEN }}
-            ACTIONS_SLACK_BOT_TOKEN=${{ secrets.ACTIONS_SLACK_BOT_TOKEN }}
             ${{ secrets.BUILD_ARGS }}
           context: ${{ inputs.CONTEXT }}
           file: ${{ inputs.DOCKERFILE }}
