@@ -47,4 +47,3 @@ jobs:
       IMAGE_TAG: "my-app:latest"
     secrets: inherit
 ```
-

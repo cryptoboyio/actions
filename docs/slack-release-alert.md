@@ -74,4 +74,3 @@ jobs:
       TRIGGER_SLACK_ALERT: true
     secrets: inherit
 ```
-
