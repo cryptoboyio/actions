@@ -36,8 +36,10 @@ on:
         type: string
         default: "${{ github.event.repository.name }}"
     secrets:
-      # ACCESS_TOKEN:
-      #   required: true
+      ACCESS_REPOS_TOKEN:
+        required: false
+      ACTIONS_SLACK_BOT_TOKEN:
+        required: false
       BUILD_ARGS:
         required: false
 
@@ -112,6 +114,7 @@ jobs:
         with:
           build-args: |
             GITHUB_TOKEN=${{ secrets.ACCESS_REPOS_TOKEN }}
+            ACTIONS_SLACK_BOT_TOKEN=${{ secrets.ACTIONS_SLACK_BOT_TOKEN }}
             ${{ secrets.BUILD_ARGS }}
           context: ${{ inputs.CONTEXT }}
           file: ${{ inputs.DOCKERFILE }}
