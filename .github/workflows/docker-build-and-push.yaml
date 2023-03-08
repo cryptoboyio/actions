@@ -4,51 +4,42 @@ on:
   workflow_call:
     inputs:
       # Action inputs ############################################
-      ACCESS_TOKEN:
-        type: string
-        default: "${{ secrets.ACCESS_REPOS_TOKEN }}"
       BUILD_RUNNERS:
         type: string
         default: "${{ vars.DEFAULT_BUILD_RUNNERS }}"
       DEFAULT_RUNNER:
         type: string
         default: "${{ vars.DEFAULT_RUNNER }}"
-      # # Docker params ############################################
-      # BUILD_ARGS:
-      #   type: string
-      #   default: ""
-      # CONTEXT:
-      #   type: string
-      #   default: "."
-      # DOCKERFILE:
-      #   type: string
-      #   default: "Dockerfile"
-      # IMAGE_TAG:
-      #   type: string
-      #   default: "${{ github.ref_name }}-${{ github.run_number }}"
-      # IMAGE_TAG_LATEST:
-      #   type: string
-      #   default: "${{ github.ref_name }}-latest"
-      # PUSH_IMAGE:
-      #   type: boolean
-      #   default: true
-      # REGISTRY:
-      #   type: string
-      #   default: "${{ vars.DEFAULT_DOCKER_REGISTRY }}"
-      # REPOSITORY:
-      #   type: string
-      #   default: "${{ github.event.repository.name }}"
-
-# env:
+      # Docker params ############################################
+      BUILD_ARGS:
+        type: string
+        default: ""
+      CONTEXT:
+        type: string
+        default: "."
+      DOCKERFILE:
+        type: string
+        default: "Dockerfile"
+      IMAGE_TAG:
+        type: string
+        default: "${{ github.ref_name }}-${{ github.run_number }}"
+      IMAGE_TAG_LATEST:
+        type: string
+        default: "${{ github.ref_name }}-latest"
+      PUSH_IMAGE:
+        type: boolean
+        default: true
+      REGISTRY:
+        type: string
+        default: "${{ vars.DEFAULT_DOCKER_REGISTRY }}"
+      REPOSITORY:
+        type: string
+        default: "${{ github.event.repository.name }}"
+    secrets:
       # ACCESS_TOKEN:
-      #   type: string
-      #   default: "${{ secrets.ACCESS_REPOS_TOKEN }}"
-      # BUILD_RUNNERS:
-      #   type: string
-      #   default: "${{ env.DEFAULT_BUILD_RUNNERS }}"
-      # DEFAULT_RUNNER:
-      #   type: string
-      #   default: "${{ env.DEFAULT_RUNNER }}"
+      #   required: true
+      BUILD_ARGS:
+        required: false
 
 jobs:
   runners:
@@ -64,129 +55,129 @@ jobs:
     outputs:
       matrix: ${{ steps.runners_list.outputs.matrix }}
 
-  # build-images:
-  #   name: Build image # on ${{ runner.arch }}
-  #   needs: runners
-  #   strategy:
-  #     fail-fast: true
-  #     matrix:
-  #       runner: ${{ fromJson(needs.runners.outputs.matrix) }}
-  #   runs-on: ${{ matrix.runner }}
-  #   outputs:
-  #     image_tag: ${{ steps.image_tags.outputs.image_tag }}
-  #     image_tag_amd64: ${{ steps.image_tags.outputs.image_tag_amd64 }}
-  #     image_tag_arm64: ${{ steps.image_tags.outputs.image_tag_arm64 }}
-  #     image_tag_latest: ${{ steps.image_tags.outputs.image_tag_latest }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3.3.0
+  build-images:
+    name: Build image on ${{ runner.arch }}
+    needs: runners
+    strategy:
+      fail-fast: true
+      matrix:
+        runner: ${{ fromJson(needs.runners.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
+    outputs:
+      image_tag: ${{ steps.image_tags.outputs.image_tag }}
+      image_tag_amd64: ${{ steps.image_tags.outputs.image_tag_amd64 }}
+      image_tag_arm64: ${{ steps.image_tags.outputs.image_tag_arm64 }}
+      image_tag_latest: ${{ steps.image_tags.outputs.image_tag_latest }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
 
-  #     - name: Set up docker buildx context
-  #       run: |
-  #         docker context create builders || echo "context \"builders\" already exists"
+      - name: Set up docker buildx context
+        run: |
+          docker context create builders || echo "context \"builders\" already exists"
 
-  #     - name: Set up docker buildx
-  #       uses: docker/setup-buildx-action@v2.4.1
-  #       with:
-  #         endpoint: builders
-  #         version: v0.10.3
+      - name: Set up docker buildx
+        uses: docker/setup-buildx-action@v2.4.1
+        with:
+          endpoint: builders
+          version: v0.10.3
 
-  #     - name: Login to docker registry
-  #       uses: docker/login-action@v2.1.0
-  #       with:
-  #         registry: ${{ inputs.REGISTRY }}
+      - name: Login to docker registry
+        uses: docker/login-action@v2.1.0
+        with:
+          registry: ${{ inputs.REGISTRY }}
 
-  #     - name: Customize image list
-  #       id: image_list
-  #       run: |
-  #         import os
+      - name: Customize image list
+        id: image_list
+        run: |
+          import os
 
-  #         RUN_N = "${{ github.run_number }}"
-  #         REGISTRY, REPO = "${{ inputs.REGISTRY }}", "${{ inputs.REPOSITORY }}"
-  #         TAG, TAG_LATEST = "${{ inputs.IMAGE_TAG }}", "${{ inputs.IMAGE_TAG_LATEST }}"
+          RUN_N = "${{ github.run_number }}"
+          REGISTRY, REPO = "${{ inputs.REGISTRY }}", "${{ inputs.REPOSITORY }}"
+          TAG, TAG_LATEST = "${{ inputs.IMAGE_TAG }}", "${{ inputs.IMAGE_TAG_LATEST }}"
 
-  #         def create_image_tag(tag: str, is_tag_latest: bool = False) -> str:
-  #             ecr_repo = f"{REGISTRY}/{REPO}"
-  #             if '/' not in tag:
-  #                 return f"{ecr_repo}:{tag}"
-  #             else:
-  #                 return f"{ecr_repo}:{'build-latest'}" if is_tag_latest else f"{ecr_repo}:{f'build-{RUN_N}'}"
+          def create_image_tag(tag: str, is_tag_latest: bool = False) -> str:
+              ecr_repo = f"{REGISTRY}/{REPO}"
+              if '/' not in tag:
+                  return f"{ecr_repo}:{tag}"
+              else:
+                  return f"{ecr_repo}:{'build-latest'}" if is_tag_latest else f"{ecr_repo}:{f'build-{RUN_N}'}"
 
-  #         os.system(f'echo "IMAGE_TAG={create_image_tag(TAG)}" >> $GITHUB_OUTPUT')
-  #         os.system(f'echo "IMAGE_TAG_LATEST={create_image_tag(TAG_LATEST, True)}" >> $GITHUB_OUTPUT')
-  #       shell: python
+          os.system(f'echo "IMAGE_TAG={create_image_tag(TAG)}" >> $GITHUB_OUTPUT')
+          os.system(f'echo "IMAGE_TAG_LATEST={create_image_tag(TAG_LATEST, True)}" >> $GITHUB_OUTPUT')
+        shell: python
 
-  #     - name: Build and push docker image
-  #       uses: docker/build-push-action@v4.0.0
-  #       with:
-  #         build-args: |
-  #           GITHUB_TOKEN=${{ inputs.ACCESS_TOKEN }}
-  #           ${{ inputs.BUILD_ARGS }}
-  #         context: ${{ inputs.CONTEXT }}
-  #         file: ${{ inputs.DOCKERFILE }}
-  #         push: ${{ inputs.PUSH_IMAGE }}
-  #         tags: |
-  #           ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }}
+      - name: Build and push docker image
+        uses: docker/build-push-action@v4.0.0
+        with:
+          build-args: |
+            GITHUB_TOKEN=${{ secrets.ACCESS_REPOS_TOKEN }}
+            ${{ secrets.BUILD_ARGS }}
+          context: ${{ inputs.CONTEXT }}
+          file: ${{ inputs.DOCKERFILE }}
+          push: ${{ inputs.PUSH_IMAGE }}
+          tags: |
+            ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }}
 
-  #     - name: Prepare image tags
-  #       id: image_tags
-  #       if: ${{ inputs.PUSH_IMAGE }}
-  #       run: |
-  #         import os
+      - name: Prepare image tags
+        id: image_tags
+        if: ${{ inputs.PUSH_IMAGE }}
+        run: |
+          import os
 
-  #         runner_arch = "${{ runner.arch }}"
-  #         image_tag, image_tag_latest = "${{ steps.image_list.outputs.IMAGE_TAG }}", "${{ steps.image_list.outputs.IMAGE_TAG_LATEST }}"
+          runner_arch = "${{ runner.arch }}"
+          image_tag, image_tag_latest = "${{ steps.image_list.outputs.IMAGE_TAG }}", "${{ steps.image_list.outputs.IMAGE_TAG_LATEST }}"
 
-  #         os.system(f'echo "image_tag={image_tag}" >> $GITHUB_OUTPUT')
-  #         os.system(f'echo "image_tag_latest={image_tag_latest}" >> $GITHUB_OUTPUT')
+          os.system(f'echo "image_tag={image_tag}" >> $GITHUB_OUTPUT')
+          os.system(f'echo "image_tag_latest={image_tag_latest}" >> $GITHUB_OUTPUT')
 
-  #         if runner_arch == "ARM64":
-  #             os.system(f'echo "image_tag_arm64={image_tag}-{runner_arch}" >> $GITHUB_OUTPUT')
-  #         elif runner_arch == "X64":
-  #             os.system(f'echo "image_tag_amd64={image_tag}-{runner_arch}" >> $GITHUB_OUTPUT')
-  #       shell: python
+          if runner_arch == "ARM64":
+              os.system(f'echo "image_tag_arm64={image_tag}-{runner_arch}" >> $GITHUB_OUTPUT')
+          elif runner_arch == "X64":
+              os.system(f'echo "image_tag_amd64={image_tag}-{runner_arch}" >> $GITHUB_OUTPUT')
+        shell: python
 
-  # build-manifests:
-  #   name: Build manifests
-  #   needs: build-images
-  #   runs-on: ${{ inputs.DEFAULT_RUNNER }}
-  #   if: ${{ inputs.PUSH_IMAGE }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3.3.0
+  build-manifests:
+    name: Build manifests
+    needs: build-images
+    runs-on: ${{ inputs.DEFAULT_RUNNER }}
+    if: ${{ inputs.PUSH_IMAGE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
 
-  #     - name: Login to docker registry
-  #       uses: docker/login-action@v2.1.0
-  #       with:
-  #         registry: ${{ inputs.REGISTRY }}
+      - name: Login to docker registry
+        uses: docker/login-action@v2.1.0
+        with:
+          registry: ${{ inputs.REGISTRY }}
 
-  #     - name: Download pip deps
-  #       run: pip install requests
+      - name: Download pip deps
+        run: pip install requests
 
-  #     - name: Build and push docker manifest
-  #       id: docker-manifest
-  #       env:
-  #         IMAGE_TAG: ${{ needs.build-images.outputs.image_tag }}
-  #         IMAGE_TAG_AMD_64: ${{ needs.build-images.outputs.image_tag_amd64 }}
-  #         IMAGE_TAG_ARM_64: ${{ needs.build-images.outputs.image_tag_arm64 }}
-  #         IMAGE_TAG_LATEST: ${{ needs.build-images.outputs.image_tag_latest }}
-  #       run: |
-  #         import os
+      - name: Build and push docker manifest
+        id: docker-manifest
+        env:
+          IMAGE_TAG: ${{ needs.build-images.outputs.image_tag }}
+          IMAGE_TAG_AMD_64: ${{ needs.build-images.outputs.image_tag_amd64 }}
+          IMAGE_TAG_ARM_64: ${{ needs.build-images.outputs.image_tag_arm64 }}
+          IMAGE_TAG_LATEST: ${{ needs.build-images.outputs.image_tag_latest }}
+        run: |
+          import os
 
-  #         os.system('docker manifest create $IMAGE_TAG_LATEST $IMAGE_TAG_AMD_64 $IMAGE_TAG_ARM_64')
-  #         os.system('docker manifest create $IMAGE_TAG $IMAGE_TAG_AMD_64 $IMAGE_TAG_ARM_64')
+          os.system('docker manifest create $IMAGE_TAG_LATEST $IMAGE_TAG_AMD_64 $IMAGE_TAG_ARM_64')
+          os.system('docker manifest create $IMAGE_TAG $IMAGE_TAG_AMD_64 $IMAGE_TAG_ARM_64')
 
-  #         IMAGE_TAG_AMD_64 = os.environ['IMAGE_TAG_AMD_64'].strip()
-  #         IMAGE_TAG_ARM_64 = os.environ['IMAGE_TAG_ARM_64'].strip()
+          IMAGE_TAG_AMD_64 = os.environ['IMAGE_TAG_AMD_64'].strip()
+          IMAGE_TAG_ARM_64 = os.environ['IMAGE_TAG_ARM_64'].strip()
 
-  #         if IMAGE_TAG_AMD_64:
-  #           os.system('docker manifest annotate $IMAGE_TAG_LATEST $IMAGE_TAG_AMD_64 --arch amd64')
-  #           os.system('docker manifest annotate $IMAGE_TAG $IMAGE_TAG_AMD_64 --arch amd64')
+          if IMAGE_TAG_AMD_64:
+            os.system('docker manifest annotate $IMAGE_TAG_LATEST $IMAGE_TAG_AMD_64 --arch amd64')
+            os.system('docker manifest annotate $IMAGE_TAG $IMAGE_TAG_AMD_64 --arch amd64')
 
-  #         if IMAGE_TAG_ARM_64:
-  #           os.system('docker manifest annotate $IMAGE_TAG_LATEST $IMAGE_TAG_ARM_64 --arch arm64')
-  #           os.system('docker manifest annotate $IMAGE_TAG $IMAGE_TAG_ARM_64 --arch arm64')
+          if IMAGE_TAG_ARM_64:
+            os.system('docker manifest annotate $IMAGE_TAG_LATEST $IMAGE_TAG_ARM_64 --arch arm64')
+            os.system('docker manifest annotate $IMAGE_TAG $IMAGE_TAG_ARM_64 --arch arm64')
 
-  #         os.system('docker manifest push $IMAGE_TAG_LATEST')
-  #         os.system('docker manifest push $IMAGE_TAG')
-  #       shell: python
+          os.system('docker manifest push $IMAGE_TAG_LATEST')
+          os.system('docker manifest push $IMAGE_TAG')
+        shell: python
