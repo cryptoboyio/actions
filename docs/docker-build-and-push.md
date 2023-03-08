@@ -10,6 +10,7 @@
 
 | Name                  | Type    | Required | Default value       | Description                |
 | --------------------- | ------- | -------- | ------------------- | -------------------------- |
+| `BUILD_ARGS`          | List    | false    | `null`              | Build args                 |
 | `CONTEXT`             | String  | false    | `.`                 | Docker context             |
 | `DOCKERFILE`          | String  | false    | `Dockerfile`        | Dockerfile                 |
 | `IMAGE_TAG`           | String  | false    | `BRANCH-RUN_NUMBER` | Image tag                  |
@@ -33,7 +34,6 @@ If `IMAGE_TAG` or `IMAGE_TAG_LATEST` contains a `/` character, then the default 
 | ------------------------- | ------ | -------- | ------------- | ------------------- |
 | `ACCESS_REPOS_TOKEN`      | String | false    | Inherited     | GitHub access token |
 | `ACTIONS_SLACK_BOT_TOKEN` | String | false    | Inherited     | Slack bot token     |
-| `BUILD_ARGS`              | List   | false    | Empty         | Build args          |
 
 ## Examples
 
