@@ -35,6 +35,13 @@ on:
       REPOSITORY:
         type: string
         default: "${{ github.event.repository.name }}"
+      # Notify params ############################################
+      TRIGGER_RELEASE:
+        type: boolean
+        default: false
+      TRIGGER_SLACK_ALERT:
+        type: boolean
+        default: false
     secrets:
       ACCESS_REPOS_TOKEN:
         required: false
@@ -124,7 +131,7 @@ jobs:
 
       - name: Prepare image tags
         id: image_tags
-        if: ${{ inputs.PUSH_IMAGE }}
+        if: inputs.PUSH_IMAGE
         run: |
           import os
 
@@ -158,7 +165,6 @@ jobs:
         run: pip install requests
 
       - name: Build and push docker manifest
-        id: docker-manifest
         env:
           IMAGE_TAG: ${{ needs.build-images.outputs.image_tag }}
           IMAGE_TAG_AMD_64: ${{ needs.build-images.outputs.image_tag_amd64 }}
@@ -184,3 +190,12 @@ jobs:
           os.system('docker manifest push $IMAGE_TAG_LATEST')
           os.system('docker manifest push $IMAGE_TAG')
         shell: python
+
+  slack-release:
+    if: (github.ref_name == 'master') && inputs.TRIGGER_SLACK_ALERT
+    uses: ./.github/workflows/slack-release-alert.yaml@docker-build-and-push-action
+    with:
+      APP_NAME: ${{ inputs.REPOSITORY }}
+      IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
+      TRIGGER_RELEASE: ${{ inputs.TRIGGER_RELEASE }}
+    secrets: inherit
