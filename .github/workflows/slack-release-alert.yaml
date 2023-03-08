@@ -124,7 +124,7 @@ jobs:
           channel-id: "${{ inputs.RELEASE_SLACK_CHANNEL }}"
           payload: |
             {
-              "text": ":heavy_check_mark: *${{ inputs.REPOSITORY }}* – `${{ github.ref_name }}-${{ github.run_number }}` successful ${{ steps.slack_message.outputs.SLACK_MESSAGE_SUFFIX }}"
+              "text": ":heavy_check_mark: *${{ inputs.APP_NAME }}* – `${{ github.ref_name }}-${{ github.run_number }}` successful ${{ steps.slack_message.outputs.SLACK_MESSAGE_SUFFIX }}"
             }
         env:
           SLACK_BOT_TOKEN: ${{ secrets.ACTIONS_SLACK_BOT_TOKEN }}
