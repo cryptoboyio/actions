@@ -192,6 +192,8 @@ jobs:
         shell: python
 
   slack-release:
+    name: Slack release
+    needs: build-manifests
     if: (github.ref_name == 'master') && inputs.TRIGGER_SLACK_ALERT
     uses: ./.github/workflows/slack-release-alert.yaml
     with:
