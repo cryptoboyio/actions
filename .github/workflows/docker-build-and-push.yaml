@@ -198,3 +198,4 @@ jobs:
       IMAGE_TAG: ${{ inputs.IMAGE_TAG }}
       TRIGGER_RELEASE: ${{ inputs.TRIGGER_RELEASE }}
     secrets: inherit
+
