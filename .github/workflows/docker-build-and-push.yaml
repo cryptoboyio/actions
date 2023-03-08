@@ -56,7 +56,7 @@ jobs:
       matrix: ${{ steps.runners_list.outputs.matrix }}
 
   build-images:
-    name: Build image on ${{ runner.arch }}
+    name: Build image
     needs: runners
     strategy:
       fail-fast: true
