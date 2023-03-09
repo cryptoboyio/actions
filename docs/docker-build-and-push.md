@@ -2,7 +2,9 @@
 
 - [Inputs](#inputs)
 - [Secrets](#secrets)
-- [Example job](#example-job)
+- [Examples](#examples)
+  - [Minimum use case](#minimum-use-case)
+  - [Slack and release use case](#slack-and-release-use-case)
 
 ## Inputs
 
@@ -35,15 +37,51 @@ If `IMAGE_TAG` or `IMAGE_TAG_LATEST` contains a `/` character, then the default 
 | `ACCESS_REPOS_TOKEN`      | String | false    | Inherited     | GitHub access token |
 | `ACTIONS_SLACK_BOT_TOKEN` | String | false    | Inherited     | Slack bot token     |
 
-## Example job
+## Examples
+
+### Minimum use case
 
 ```yaml
+name: Build docker image on PR
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - "master"
+      - "develop"
+      - "release[0-9]+"
+      - "release[0-9]+-[0-9]+"
+
 jobs:
-  slack-release:
-    name: Slack release
-    uses: cryptoboyio/actions/.github/workflows/slack-release-alert.yaml
+  build-and-push:
+    name: Build PR-${{ github.event.number }}
+    uses: cryptoboyio/actions/.github/workflows/docker-build-and-push.yaml@v1
     with:
-      APP_NAME: "my-app"
-      IMAGE_TAG: "my-app:latest"
+      PUSH_IMAGE: false
+    secrets: inherit
+```
+
+### Slack and release use case
+
+```yaml
+name: Build and push docker image on PUSH
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "master"
+      - "develop"
+      - "release[0-9]+"
+      - "release[0-9]+-[0-9]+"
+
+jobs:
+  build-and-push:
+    name: Build ${{ github.ref_name }}-${{ github.run_number }}
+    uses: cryptoboyio/actions/.github/workflows/docker-build-and-push.yaml@docker-build-and-push-action
+    with:
+      TRIGGER_RELEASE: true
+      TRIGGER_SLACK_ALERT: true
     secrets: inherit
 ```
