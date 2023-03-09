@@ -1,0 +1,26 @@
+name: Force Push Action
+
+on:
+  workflow_call:
+    inputs:
+      DEFAULT_RUNNER:
+        type: string
+        default: "${{ vars.DEFAULT_RUNNER }}"
+
+jobs:
+  force-push:
+    name: Force push
+    runs-on: ${{ inputs.DEFAULT_RUNNER }}
+    if: github.ref_name == 'master' && contains(vars.FORCE_PUSH_PEOPLE, github.actor)
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v2
+        with:
+          ref: master
+          token: ${{ secrets.ACCESS_REPOS_TOKEN }}
+
+      - name: Force push to develop
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git push origin master:develop --force
