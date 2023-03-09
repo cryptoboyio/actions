@@ -1,0 +1,130 @@
+name: Slack Release Alert Action
+
+on:
+  workflow_call:
+    inputs:
+      APP_NAME:
+        type: string
+        required: true
+      DEFAULT_RUNNER:
+        type: string
+        default: "${{ vars.DEFAULT_RUNNER }}"
+      IMAGE_TAG:
+        type: string
+        required: true
+      RELEASE_REPO:
+        type: string
+        default: "${{ vars.DEFAULT_RELEASE_REPO }}"
+      RELEASE_REPO_OWNER:
+        type: string
+        default: "${{ vars.DEFAULT_RELEASE_REPO_OWNER }}"
+      RELEASE_REPO_WORKFLOW:
+        type: string
+        default: "${{ vars.DEFAULT_RELEASE_REPO_WORKFLOW }}"
+      RELEASE_SLACK_CHANNEL:
+        type: string
+        default: "${{ vars.DEFAULT_RELEASE_SLACK_CHANNEL }}"
+      TRIGGER_RELEASE:
+        type: boolean
+        default: false
+    secrets:
+      ACCESS_REPOS_TOKEN:
+        required: false
+      ACTIONS_SLACK_BOT_TOKEN:
+        required: false
+
+jobs:
+  slack-release-alert:
+    name: Slack release
+    runs-on: ${{ inputs.DEFAULT_RUNNER }}
+    steps:
+      - name: Trigger release
+        if: ${{ inputs.TRIGGER_RELEASE }}
+        id: trigger_release
+        run: |
+          import os
+          import time
+          import requests
+
+          # Initialize environment variables
+          GH_REPO = "${{ inputs.RELEASE_REPO }}"
+          GH_OWNER = "${{ inputs.RELEASE_REPO_OWNER }}"
+          GH_WORKFLOW = "${{ inputs.RELEASE_REPO_WORKFLOW }}"
+
+          RELEASE_APP = "${{ inputs.APP_NAME }}"
+          RELEASE_TAG = "${{ inputs.IMAGE_TAG }}"
+
+          # Initialize data for requests
+          GH_API_URL = f"https://api.github.com/repos/{GH_OWNER}/{GH_REPO}"
+
+          GH_API_HEADERS = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": "Bearer ${{ secrets.ACCESS_REPOS_TOKEN }}",
+              "X-GitHub-Api-Version": "2022-11-28"
+          }
+
+          GH_RELEASE_DATA = {
+              "ref": "master",
+              "inputs": {
+                  "app": f"{RELEASE_APP}",
+                  "image-tag": f"{RELEASE_TAG}"
+              }
+          }
+
+          # Trigger relase workflow
+          post_request = requests.post(
+              url=f"{GH_API_URL}/actions/workflows/{GH_WORKFLOW}/dispatches",
+              json=GH_RELEASE_DATA,
+              headers=GH_API_HEADERS
+          )
+
+          print(f"Status code: {post_request.status_code}")
+          assert post_request.status_code == 204
+          print("Release workflow started successfully")
+
+          # Get release pull request URL
+          attempts = 0
+          release_url = ""
+
+          while attempts < 3:
+              time.sleep(30)
+
+              response_get = requests.get(
+                  url=f"{GH_API_URL}/pulls",
+                  headers=GH_API_HEADERS
+              )
+
+              json_data = response_get.json()
+
+              pr_title = f"[{RELEASE_APP}] Release {RELEASE_TAG}"
+              for pr in json_data:
+                  if pr_title == pr['title']:
+                      release_url = pr['html_url']
+                      break
+              else:
+                  attempts += 1
+                  continue
+              break
+
+          os.system(f'echo "RELEASE_URL={release_url}" >> $GITHUB_OUTPUT')
+        shell: python
+
+      - name: Prepare a slack message
+        id: slack_message
+        run: |
+          if [[ "${{ steps.trigger_release.outputs.RELEASE_URL }}" != "" ]]; then
+              echo "SLACK_MESSAGE_SUFFIX=build – <${{ steps.trigger_release.outputs.RELEASE_URL }}|*release link*> :rocket:" >> $GITHUB_OUTPUT
+          else
+              echo "SLACK_MESSAGE_SUFFIX=build" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send a successful slack notification
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: "${{ inputs.RELEASE_SLACK_CHANNEL }}"
+          payload: |
+            {
+              "text": ":heavy_check_mark: *${{ inputs.APP_NAME }}* – `${{ github.ref_name }}-${{ github.run_number }}` successful ${{ steps.slack_message.outputs.SLACK_MESSAGE_SUFFIX }}"
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.ACTIONS_SLACK_BOT_TOKEN }}
