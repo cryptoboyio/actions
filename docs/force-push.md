@@ -13,11 +13,8 @@
 
 ```yaml
 jobs:
-  slack-release:
-    name: Slack release
-    uses: cryptoboyio/actions/.github/workflows/slack-release-alert.yaml@v1
-    with:
-      APP_NAME: "my-app"
-      IMAGE_TAG: "my-app:latest"
+  force-push:
+    name: Force push
+    uses: cryptoboyio/actions/.github/workflows/force-push.yaml@v1
     secrets: inherit
 ```
