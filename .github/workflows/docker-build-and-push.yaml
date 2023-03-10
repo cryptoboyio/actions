@@ -117,7 +117,10 @@ jobs:
           if len(args) != 0:
               args = "--build-arg " + args
 
-          subprocess.call(f'{cmd} {args}', shell=True)
+          result = f'{cmd} {args}'
+
+          print(result)
+          subprocess.call(result, shell=True)
         shell: python
 
       - name: Docker push image
