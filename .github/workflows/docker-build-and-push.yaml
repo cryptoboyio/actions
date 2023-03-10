@@ -126,11 +126,11 @@ jobs:
       #     tags: |
       #       ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }}
 
-      - name: Build and push docker image
+      - name: Build docker image
         run: |
           docker build -t ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }} ${{ inputs.CONTEXT }} -f ${{ inputs.DOCKERFILE }} --build-arg GITHUB_TOKEN=${{ secrets.ACCESS_REPOS_TOKEN }}
 
-      - name: Prepare image tags
+      - name: Push docker image
         if: inputs.PUSH_IMAGE
         run: |
           docker push ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }}
