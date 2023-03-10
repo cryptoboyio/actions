@@ -114,17 +114,26 @@ jobs:
           os.system(f'echo "IMAGE_TAG_LATEST={create_image_tag(TAG_LATEST, True)}" >> $GITHUB_OUTPUT')
         shell: python
 
+      # - name: Build and push docker image
+      #   uses: docker/build-push-action@v4.0.0
+      #   with:
+      #     build-args: |
+      #       GITHUB_TOKEN=${{ secrets.ACCESS_REPOS_TOKEN }}
+      #       ${{ inputs.BUILD_ARGS }}
+      #     context: ${{ inputs.CONTEXT }}
+      #     file: ${{ inputs.DOCKERFILE }}
+      #     push: ${{ inputs.PUSH_IMAGE }}
+      #     tags: |
+      #       ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }}
+
       - name: Build and push docker image
-        uses: docker/build-push-action@v4.0.0
-        with:
-          build-args: |
-            GITHUB_TOKEN=${{ secrets.ACCESS_REPOS_TOKEN }}
-            ${{ inputs.BUILD_ARGS }}
-          context: ${{ inputs.CONTEXT }}
-          file: ${{ inputs.DOCKERFILE }}
-          push: ${{ inputs.PUSH_IMAGE }}
-          tags: |
-            ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }}
+        run: |
+          docker build -t ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }} ${{ inputs.CONTEXT }} -f ${{ inputs.DOCKERFILE }} --build-arg GITHUB_TOKEN=${{ secrets.ACCESS_REPOS_TOKEN }}
+
+      - name: Prepare image tags
+        if: inputs.PUSH_IMAGE
+        run: |
+          docker push ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }}
 
       - name: Prepare image tags
         id: image_tags
