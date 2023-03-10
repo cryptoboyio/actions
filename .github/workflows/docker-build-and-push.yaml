@@ -122,7 +122,6 @@ jobs:
             ${{ inputs.BUILD_ARGS }}
           context: ${{ inputs.CONTEXT }}
           file: ${{ inputs.DOCKERFILE }}
-          load: true
           push: ${{ inputs.PUSH_IMAGE }}
           tags: |
             ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }}
