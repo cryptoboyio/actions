@@ -79,7 +79,7 @@ on:
 jobs:
   build-and-push:
     name: Build ${{ github.ref_name }}-${{ github.run_number }}
-    uses: cryptoboyio/actions/.github/workflows/docker-build-and-push.yaml@docker-build-and-push-action
+    uses: cryptoboyio/actions/.github/workflows/docker-build-and-push.yaml@v1
     with:
       TRIGGER_RELEASE: true
       TRIGGER_SLACK_ALERT: true
