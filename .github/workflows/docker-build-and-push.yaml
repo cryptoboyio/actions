@@ -106,14 +106,17 @@ jobs:
           os.system(f'echo "IMAGE_TAG_LATEST={create_image_tag(TAG_LATEST, True)}" >> $GITHUB_OUTPUT')
         shell: python
 
-      - name: Build docker image
+      - name: Docker build image
         run: |
-          docker build ${{ inputs.CONTEXT }} \
-            -t ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }} \
-            -f ${{ inputs.DOCKERFILE }} \
-            --build-arg GITHUB_TOKEN=${{ secrets.ACCESS_REPOS_TOKEN }} ${{ inputs.BUILD_ARGS }}
+          import subprocess
 
-      - name: Push docker image
+          tmp = """docker build -t ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }} ${{ inputs.CONTEXT }} -f ${{ inputs.DOCKERFILE }} --build-arg GITHUB_TOKEN=${{ secrets.ACCESS_REPOS_TOKEN }} ${{ inputs.BUILD_ARGS }}"""
+          cmd = " ".join(line.strip() for line in tmp.splitlines())
+
+          subprocess.call(cmd, shell=True)
+        shell: python
+
+      - name: Docker push image
         if: inputs.PUSH_IMAGE
         run: |
           docker push ${{ steps.image_list.outputs.IMAGE_TAG }}-${{ runner.arch }}
