@@ -13,8 +13,8 @@ jobs:
     runs-on: ${{ inputs.DEFAULT_RUNNER }}
     if: github.ref_name == 'master' && contains(vars.FORCE_PUSH_PEOPLE, github.actor)
     steps:
-      - name: Checkout develop
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
         with:
           ref: master
           token: ${{ secrets.ACCESS_REPOS_TOKEN }}
