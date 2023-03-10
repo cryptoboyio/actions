@@ -70,6 +70,8 @@ jobs:
       matrix:
         runner: ${{ fromJson(needs.runners.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
+    env:
+      DOCKER_BUILDKIT: "1"
     outputs:
       image_tag: ${{ steps.image_tags.outputs.image_tag }}
       image_tag_amd64: ${{ steps.image_tags.outputs.image_tag_amd64 }}
